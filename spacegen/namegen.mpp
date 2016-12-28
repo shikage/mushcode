@@ -22,11 +22,11 @@
     },
     {
         &__NAMEGEN_NUM %#=[extract(%q0,0,1)];
-        think Located existing SSGN - ShiKage Space Generators - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]        
+        think Located existing SSGN - ShiKage Space Generators - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
     }
 
 @@ Update build number
-&__BUILDNUM [get(%#/__NAMEGEN_NUM)]=[add(get(%#/__BUILDNUM),1)];
+&__BUILDNUM [get(%#/__NAMEGEN_NUM)]=[add(get(%#/__BUILDNUM),1)]
    
 @@ Cleanup after code built
-&__NAMEGEN_NUM %#=;
+&__NAMEGEN_NUM %#=
