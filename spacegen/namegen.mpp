@@ -26,7 +26,7 @@
     }
 
 @@ Update build number
-&__BUILDNUM [get(%#/__NAMEGEN_NUM)]=[add(get(%#/__BUILDNUM),1)]
+&__BUILDNUM [setr(0,[get(%#/__NAMEGEN_NUM)])]=[add(get(%q0/__BUILDNUM),1)]
    
 @@ Cleanup after code built
 &__NAMEGEN_NUM %#=
