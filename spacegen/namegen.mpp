@@ -15,7 +15,7 @@
 @@ Planet Name Generation Object
 @@ This uses the algorithm use in the original Elite game
 @@ Start by getting the namegen object DB# or creating one
-@ifelse [words(setr(0,[search(THING=SSGNG - ShiKage Space Generators - NameGen)]))]=0,
+@switch [words(setr(0,[search(THING=SSGNG - ShiKage Space Generators - NameGen)]))]=0,
     {
         &__NAMEGEN_NUM %#=[create(SSGNG - ShiKage Space Generators - NameGen)];
         think New SSGN - ShiKage Space Generators - NameGen object created with DBref [get(%#/__NAMEGEN_NUM)]
@@ -25,3 +25,5 @@
         think Located existing SSGN - ShiKage Space Generators - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]        
     }
     
+@@ Cleanup after code built
+&__NAMEGEN_NUM %#=;
