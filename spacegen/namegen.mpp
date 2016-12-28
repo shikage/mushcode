@@ -21,8 +21,8 @@
         think New SSGN - ShiKage Space Generators - NameGen object created with DBref [get(%#/__NAMEGEN_NUM)]
     },
     {
-        &__NAMEGEN_NUM %#=[extract(%q0,0,1)];
-        think Located existing SSGN - ShiKage Space Generators - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
+        &__NAMEGEN_NUM %#=[extract(%q0,1,1)];
+        think Located existing SSGNG - ShiKage Space Generators - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
     }
 
 @@ Update build number
