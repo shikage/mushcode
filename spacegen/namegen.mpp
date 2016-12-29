@@ -25,8 +25,90 @@
         think Located existing SSGNG - ShiKage Space Generators - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
     }
 
+@@ Pairs
+&D_PAIRS [get(%#/__NAMEGEN_NUM)]=..lexegezacebisousesarmaindirea.eratenberalavetiedorquanteisrion
+    
+@@ Custom RNG
+&FN_RAND [get(%#/__NAMEGEN_NUM)]=
+    [mod(
+        div(
+            add(
+                mul(214013,%0),
+                2531011
+            ),
+            65536
+        ),
+        32767
+    )]
+    
+@@ Initialize Seed
+&FN_INIT [get(%#/__NAMEGEN_NUM)]=[setq(0,[todec(0x5a4a)] [todec(0x0248)] [todec(0xb753)])]
+
+@@ Generate Random Seeds
+&FN_RAND_SEEDS [get(%#/__NAMEGEN_NUM)]=%0 [setr(s,u(%!/FN_RAND,%0))] [u(%!/FN_RAND,%qs)]
+    
+@@ Shuffle Seeds
+&FN_SHUFFLE [get(%#/__NAMEGEN_NUM)]=
+    [@@(%q0 -- Seed 1, %q1 -- Seed 2, %q2 -- Seed 3, %q3 -- Seed Temp)]
+    [setq(0,extract(%0,1,1))]
+    [setq(1,extract(%0,2,1))]
+    [setq(2,extract(%0,3,1))]
+    [setq(3,mask(add(%q0,%q1,%q2),todec(0xFFFF),&))]
+    %q1 %q2 %q3
+
+@@ Check for Long name bit
+&FN_LONGNAME [get(%#/__NAMEGEN_NUM)]=[eq(mask(extract(%0,1,1),todec(0x40),&),todec(0x40))]
+
+@@ Get Pair Index
+&FN_INDEX [get(%#/__NAMEGEN_NUM)]=
+    [mod(
+        mul(2,
+            mask(
+                div(%0,256),
+                todec(0x1f)
+            )
+        ),
+        strlen(u(%!/D_PAIRS))
+    )]
+
+@@ Generate A Name
+&FN_CREATE_NAME [get(%#/__NAMEGEN_NUM)]=
+    [@@(%0/%q0 -- Seed values, %q1 -- Longname Flag, %q2 -- Seed 2, 
+        %qa -- pair index, %qz -- Planet name)]
+    [setq(0,%0)]
+    [setq(1,[ulocal(%!/FN_LONGNAME,%q0)])]
+    [setq(z,)]
+    [iter(lnum(4),
+        [setq(2,[extract(%q0,3,1)])]
+        [setq(0,[ulocal(%!/FN_SHUFFLE,%q0)])]
+        [setq(a,[u(%!/FN_INDEX, %q2)])]
+        [ifelse([or(lt(itext(),3),%q1)],
+            [setq(z,%qz[mid(get(%!/D_PAIRS),%qa,2)])]
+        )]
+    ,%b,)]
+    [capstr(edit(%qz,.,))]
+    
+@@ Generate A List of Worlds
+&FN_CREATE_WORLDS [get(%#/__NAMEGEN_NUM)]=
+    [@@(%q0 -- Seed Values)]
+    [setq(0,0)]
+    [switch(1,
+        eq(words(%0),1),
+            [setq(0,u(%!/FN_RAND_SEEDS,%0))],
+        eq(words(%0),3),
+            [setq(0,%0)],
+        [u(%!/FN_INIT)]
+    )]
+    [iter(lnum(20),
+        [pemit(%#,PLANET ##: [u(%!/FN_CREATE_NAME,%q0)])]
+    )]
+    
 @@ Update build number
-&__BUILDNUM [setr(0,[get(%#/__NAMEGEN_NUM)])]=[add(get(%q0/__BUILDNUM),1)]
-   
+@sudo %#=
+    {
+        &__BUILDNUM [setr(0,[get(%#/__NAMEGEN_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
+        think SSGNG - ShiKage Space Generators - NameGen updated to build: [get(get(%#/__NAMEGEN_NUM)/__BUILDNUM)]
+    }
+    
 @@ Cleanup after code built
 &__NAMEGEN_NUM %#=
