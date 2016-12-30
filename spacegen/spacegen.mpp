@@ -1,0 +1,228 @@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Copyright 2016 Chris Workman "ShiKage"
+@@
+@@ Licensed under the Apache License, Version 2.0 (the "License");
+@@ you may not use this file except in compliance with the License.
+@@ You may obtain a copy of the License at
+@@
+@@ http://www.apache.org/licenses/LICENSE-2.0
+@@
+@@ Unless required by applicable law or agreed to in writing, software
+@@ distributed under the License is distributed on an "AS IS" BASIS,
+@@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+@@ See the License for the specific language governing permissions and
+@@ limitations under the License.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Pre-setup prep
+@@ Some steps to prepare for the initial setup
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Quiet set/triggered messages while performing install
+@ifelse [hasflag(%#,QUIET)]=
+    {
+        &__SET_QUIET %#=1
+    },
+    {
+        @set %#=QUIET
+    }
+
+@@ Starting code setup
+think Starting setup of ShiKage Space Generation system
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ System Core Object
+@@ Core object that contains data referenced by
+@@ other objects in this system
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+think Setting up ShiKage's Space Generator Core object
+
+@@ Start by getting the RNG object DB# or creating one
+@switch [words(setr(0,[search(THING=\[SSG\] - Core)]))]=0,
+    {
+        &__CORE_NUM %#=[create(\[SSGC\] ShiKage's Space Generation - Core)];
+        think New \[SSGC\] ShiKage's Space Generation - Core object created with DBref [get(%#/__CORE_NUM)]
+    },
+    {
+        &__CORE_NUM %#=[extract(%q0,1,1)];
+        think Located existing \[SSGC\] ShiKage's Space Generation - Core object with DBref [get(%#/__CORE_NUM)]
+    }
+
+@@ Update build number
+@sudo %#=
+    {
+        &__BUILDNUM [setr(0,[get(%#/__RNG_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
+        think \[SSGC\] ShiKage's Space Generation - Core updated to build: [get(get(%#/__RNG_NUM)/__BUILDNUM)]
+    }    
+    
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ RNG Object
+@@ This object contains some custom random number
+@@ generation code
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+think Setting up Random Number Generator object
+
+@@ Start by getting the RNG object DB# or creating one
+@switch [words(setr(0,[search(THING=\[SSGRNG\] ShiKage's Space Generation - Random Number Generator)]))]=0,
+    {
+        &__RNG_NUM %#=[create(\[SSG\] - Random Number Generator)];
+        think New \[SSGRNG\] ShiKage's Space Generation - Random Number Generator object created with DBref [get(%#/__RNG_NUM)]
+    },
+    {
+        &__RNG_NUM %#=[extract(%q0,1,1)];
+        think Located existing \[SSGRNG\] ShiKage's Space Generation - Random Number Generator object with DBref [get(%#/__RNG_NUM)]
+    }
+
+@@ Add object DB# to Core and set parent
+@sudo %#=
+    {
+        &__RNG_NUM [get(%#/__CORE_NUM)]=[get(%#/__RNG_NUM)];
+        @parent [get(%#/__RNG_NUM)]=[get(%#/__CORE_NUM)]
+    }
+    
+@@ Custom LCG function to simulate older LCC rand() function
+&FN_LCG [get(%#/__RNG_NUM)]=
+    [mod(
+        div(
+            add(
+                mul(214013,%0),
+                2531011
+            ),
+            65536
+        ),
+        32767
+    )]
+    
+@@ Update build number
+@sudo %#=
+    {
+        &__BUILDNUM [setr(0,[get(%#/__RNG_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
+        think \[SSGRNG\] ShiKage's Space Generation - Random Number Generator updated to build: [get(get(%#/__RNG_NUM)/__BUILDNUM)]
+    }
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    
+@@ Planet Name Generation Object
+@@ This uses the algorithm use in the original Elite game
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+think Setting up Name Generation Object
+
+@@ Start by getting the namegen object DB# or creating one
+@switch [words(setr(0,[search(THING=\[SSGNG\] ShiKage's Space Generation - NameGen)]))]=0,
+    {
+        &__NAMEGEN_NUM %#=[create(\[SSG\] - NameGen)];
+        think New \[SSGNG\] ShiKage's Space Generation - NameGen object created with DBref [get(%#/__NAMEGEN_NUM)]
+    },
+    {
+        &__NAMEGEN_NUM %#=[extract(%q0,1,1)];
+        think Located existing \[SSGNG\] ShiKage's Space Generation - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
+    }
+
+@@ Add object DB# to Core and set parent
+@sudo %#=
+    {
+        &__NAMEGEN_NUM [get(%#/__CORE_NUM)]=[get(%#/__NAMEGEN_NUM)];
+        @parent [get(%#/__NAMEGEN_NUM)]=[get(%#/__CORE_NUM)]
+    }    
+    
+@@ Pairs
+&D_PAIRS [get(%#/__NAMEGEN_NUM)]=..lexegezacebisousesarmaindirea.eratenberalavetiedorquanteisrion
+    
+@@ Custom RNG
+&FN_RAND [get(%#/__NAMEGEN_NUM)]=
+    [mod(
+        div(
+            add(
+                mul(214013,%0),
+                2531011
+            ),
+            65536
+        ),
+        32767
+    )]
+    
+@@ Initialize Seed
+&FN_INIT [get(%#/__NAMEGEN_NUM)]=[setq(0,[todec(0x5a4a)] [todec(0x0248)] [todec(0xb753)])]
+
+@@ Generate Random Seeds
+&FN_RAND_SEEDS [get(%#/__NAMEGEN_NUM)]=%0 [setr(s,u(%!/FN_RAND,%0))] [u(%!/FN_RAND,%qs)]
+    
+@@ Shuffle Seeds
+&FN_SHUFFLE [get(%#/__NAMEGEN_NUM)]=
+    [@@(%q0 -- Seed 1, %q1 -- Seed 2, %q2 -- Seed 3, %q3 -- Seed Temp)]
+    [setq(0,extract(%0,1,1))]
+    [setq(1,extract(%0,2,1))]
+    [setq(2,extract(%0,3,1))]
+    [setq(3,mask(add(%q0,%q1,%q2),todec(0xFFFF),&))]
+    %q1 %q2 %q3
+
+@@ Check for Long name bit
+&FN_LONGNAME [get(%#/__NAMEGEN_NUM)]=[eq(mask(extract(%0,1,1),todec(0x40),&),todec(0x40))]
+
+@@ Get Pair Index
+&FN_INDEX [get(%#/__NAMEGEN_NUM)]=
+    [mod(
+        mul(2,
+            mask(
+                div(%0,256),
+                todec(0x1f)
+            )
+        ),
+        strlen(u(%!/D_PAIRS))
+    )]
+
+@@ Generate A Name
+&FN_CREATE_NAME [get(%#/__NAMEGEN_NUM)]=
+    [@@(%0/%q0 -- Seed values, %q1 -- Longname Flag, %q2 -- Seed 2, 
+        %qa -- pair index, %qz -- Planet name)]
+    [setq(0,%0)]
+    [setq(1,[ulocal(%!/FN_LONGNAME,%q0)])]
+    [setq(z,)]
+    [iter(lnum(4),
+        [setq(2,[extract(%q0,3,1)])]
+        [setq(0,[ulocal(%!/FN_SHUFFLE,%q0)])]
+        [setq(a,[u(%!/FN_INDEX, %q2)])]
+        [ifelse([or(lt(itext(),3),%q1)],
+            [setq(z,%qz[mid(get(%!/D_PAIRS),%qa,2)])]
+        )]
+    ,%b,)]
+    [capstr(edit(%qz,.,))]
+    
+@@ Generate A List of Worlds
+&FN_CREATE_WORLDS [get(%#/__NAMEGEN_NUM)]=
+    [@@(%q0 -- Seed Values)]
+    [setq(0,0)]
+    [switch(1,
+        eq(words(%0),1),
+            [setq(0,u(%!/FN_RAND_SEEDS,%0))],
+        eq(words(%0),3),
+            [setq(0,%0)],
+        [u(%!/FN_INIT)]
+    )]
+    [iter(lnum(20),
+        [pemit(%#,PLANET ##: [u(%!/FN_CREATE_NAME,%q0)])]
+    )]
+    
+@@ Update build number
+@sudo %#=
+    {
+        &__BUILDNUM [setr(0,[get(%#/__NAMEGEN_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
+        think \[SSGNG\] ShiKage's Space Generation - NameGen updated to build: [get(get(%#/__NAMEGEN_NUM)/__BUILDNUM)]
+    }
+    
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Post-setup clean-up
+@@ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Remove object reference attributes
+&__CORE_NUM %#=
+&__RNG_NUM %#=
+&__NAMEGEN_NUM %#=
+
+@@ Reset Quiet flag
+@ifelse [hasattr(%#,__SET_QUIET)]=
+    {
+        &__SET_QUIET %#=
+    },
+    {
+        @set %#=!QUIET
+    }
