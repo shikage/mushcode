@@ -36,10 +36,10 @@ think Starting setup of ShiKage Space Generation system
 @@ Core object that contains data referenced by
 @@ other objects in this system
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up ShiKage's Space Generator Core object
+think Setting up ShiKage's Space Generation Core object
 
-@@ Start by getting the RNG object DB# or creating one
-@switch [words(setr(0,[search(THING=\[SSG\] - Core)]))]=0,
+@@ Start by getting the Core object DB# or creating one
+@switch [words(setr(0,[search(THING=\\\[SSGC\\\] ShiKage's Space Generation - Core)]))]=0,
     {
         &__CORE_NUM %#=[create(\[SSGC\] ShiKage's Space Generation - Core)];
         think New \[SSGC\] ShiKage's Space Generation - Core object created with DBref [get(%#/__CORE_NUM)]
@@ -49,57 +49,310 @@ think Setting up ShiKage's Space Generator Core object
         think Located existing \[SSGC\] ShiKage's Space Generation - Core object with DBref [get(%#/__CORE_NUM)]
     }
 
+@@ Add object DB# to Core
+@sudo %#=
+    {
+        &__CORE_NUM [get(%#/__CORE_NUM)]=[get(%#/__CORE_NUM)];
+    }    
+    
+@@ Custom LCG function, roughly 32-bit period.
+&FN_LCG [get(%#/__CORE_NUM)]=
+    [mod(
+        add(
+            mul(1664525,%0),
+            1013904223
+        ),
+        4294967296
+    )]    
+    
+@@ Galaxy/Space Definitions
+&D_MAX_SIZE [get(%#/__CORE_NUM)]=2147483647
+
+@@ Sector Variables
+&D_COLS_PER_SECTOR     [get(%#/__CORE_NUM)]=32
+&D_ROWS_PER_SECTOR     [get(%#/__CORE_NUM)]=32
+&D_SECTORS_PER_ROW     [get(%#/__CORE_NUM)]=2048
+&D_SECTORS_PER_COL     [get(%#/__CORE_NUM)]=2048
+&D_MAX_SECTORS         [get(%#/__CORE_NUM)]=4194303
+
+@@ Subsector Variables
+&D_SUBSECTORS          [get(%#/__CORE_NUM)]=16
+&D_ROWS_PER_SUB        [get(%#/__CORE_NUM)]=8
+&D_COLS_PER_SUB        [get(%#/__CORE_NUM)]=8
+&D_SUB_SECTOR_ROWS     [get(%#/__CORE_NUM)]=4
+&D_SUB_SECTOR_COLS     [get(%#/__CORE_NUM)]=4
+&D_SUB_SECTOR_IDS      [get(%#/__CORE_NUM)]=
+    Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi
+    
 @@ Update build number
 @sudo %#=
     {
-        &__BUILDNUM [setr(0,[get(%#/__RNG_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
-        think \[SSGC\] ShiKage's Space Generation - Core updated to build: [get(get(%#/__RNG_NUM)/__BUILDNUM)]
+        &__BUILDNUM [setr(0,[get(%#/__CORE_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
+        think \[SSGC\] ShiKage's Space Generation - Core updated to build: [get(get(%#/__CORE_NUM)/__BUILDNUM)]
     }    
-    
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@ RNG Object
-@@ This object contains some custom random number
-@@ generation code
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up Random Number Generator object
 
-@@ Start by getting the RNG object DB# or creating one
-@switch [words(setr(0,[search(THING=\[SSGRNG\] ShiKage's Space Generation - Random Number Generator)]))]=0,
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Sector Generator
+@@ Code to generate individual sectors of space.
+@@ These follow Traveller 5 rules and are roughly
+@@ 1280 parsecs to a sector (32 x 32)
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+think Setting up Sector Generator object
+
+@@ Start by getting the object DB# or creating one
+@switch [words(setr(0,[search(THING=\\\[SSGSG\\\] ShiKage's Space Generation - Sector Generator)]))]=0,
     {
-        &__RNG_NUM %#=[create(\[SSG\] - Random Number Generator)];
-        think New \[SSGRNG\] ShiKage's Space Generation - Random Number Generator object created with DBref [get(%#/__RNG_NUM)]
+        &__SECTOR_GEN_NUM %#=[create(\[SSGSG\] ShiKage's Space Generation - Sector Generator)];
+        think New \[SSGSG\] ShiKage's Space Generation - Sector Generator object created with DBref [get(%#/__SECTOR_GEN_NUM)]
     },
     {
-        &__RNG_NUM %#=[extract(%q0,1,1)];
-        think Located existing \[SSGRNG\] ShiKage's Space Generation - Random Number Generator object with DBref [get(%#/__RNG_NUM)]
+        &__SECTOR_GEN_NUM %#=[extract(%q0,1,1)];
+        think Located existing \[SSGSG\] ShiKage's Space Generation - Sector Generator object with DBref [get(%#/__SECTOR_GEN_NUM)]
     }
 
 @@ Add object DB# to Core and set parent
 @sudo %#=
     {
-        &__RNG_NUM [get(%#/__CORE_NUM)]=[get(%#/__RNG_NUM)];
-        @parent [get(%#/__RNG_NUM)]=[get(%#/__CORE_NUM)]
-    }
+        &__SECTOR_GEN_NUM [get(%#/__CORE_NUM)]=[get(%#/__SECTOR_GEN_NUM)];
+        @parent [get(%#/__SECTOR_GEN_NUM)]=[get(%#/__CORE_NUM)]
+    } 
+
+@@ Set Required Flags
+@set [get(%#/__SECTOR_GEN_NUM)]=!halt royal sidefx
     
-@@ Custom LCG function to simulate older LCC rand() function
-&FN_LCG [get(%#/__RNG_NUM)]=
-    [mod(
-        div(
-            add(
-                mul(214013,%0),
-                2531011
-            ),
-            65536
-        ),
-        32767
+@@ Generate a sector
+&FN_CREATE_SECTOR [get(%#/__SECTOR_GEN_NUM)]=
+    [@@(
+        %0 -- Sector ID, %q0 -- Sector Object, 
+        %q1 -- Sector Row, %q2 -- Sector Col,
+        %q3 -- North Sector, %q4 -- South Sector,
+        %q5 -- West Sector, %q6 -- East Sector,
+        %q7 -- Subsector Number
     )]
-    
-@@ Update build number
+    [ifelse(
+        [between(0,get(%!/D_MAX_SECTORS),%0,1)],
+        {
+            [ifelse(
+                [and(hasattr(%!,D_%0),isdbref(setr(0,v(D_%0))),hasattr(%q0,D_SID))],
+                {
+                    [pemit(%#,Sector %0 already exists \\\[DB# %q0\\\])]
+                },
+                {
+                    [setq(0,create(Sector %0))]
+                    [set(%!,D_%0:%q0)]
+                    [set(%q0,
+                        D_SID:
+                            %0
+                    )]
+                    [set(%q0,
+                        D_SECTOR_ROW:
+                            [setr(1,floor(fdiv(%0,get(%!/D_SECTORS_PER_ROW))))]
+                    )]
+                    [set(%q0,
+                        D_SECTOR_COL:
+                            [setr(2,sub(mod(%0,get(%!/D_SECTORS_PER_COL)),1))]
+                    )]
+                    [set(%q0,
+                        D_SYSTEM_ROW:
+                            [mul(%q1,get(%!/D_ROWS_PER_SECTOR))]
+                    )]
+                    [set(%q0,
+                        D_SYSTEM_COL:
+                            [mul(%q2,get(%!/D_COLS_PER_SECTOR))]
+                    )]
+                    [pemit(%#,Sector %0 Created \\\[DB# %q0\\\])]
+                    [pemit(%#,Generating Subsectors...)]
+                    [iter(
+                        [lnum(get(%!/D_SUB_SECTOR_ROWS))],
+                        [iter(
+                            [lnum(get(%!/D_SUB_SECTOR_COLS))],
+                            [setq(7,add(itext(0),mul(itext(1),get(%!/D_SUB_SECTOR_COLS))))]
+                            [ulocal([get(%!/__SUB_GEN_NUM)]/FN_CREATE_SUBSECTOR,%q0,%q7)]
+                        )]
+                    )]
+                }
+            )]
+        },
+        {
+            #-1 INVALID SECTOR ID
+        }
+    )]
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Sub Sector Generator
+@@ Code to generate individual sub sectors of space.
+@@ These follow Traveller 5 rules and are contain
+@@ 64 parsecs each (8 x 8)
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+think Setting up Sub Sector Generator object
+
+@@ Start by getting the object DB# or creating one
+@switch [words(setr(0,[search(THING=\\\[SSGSubG\\\] ShiKage's Space Generation - Sub Sector Generator)]))]=0,
+    {
+        &__SUB_GEN_NUM %#=[create(\[SSGSubG\] ShiKage's Space Generation - Sub Sector Generator)];
+        think New \[SSGSubG\] ShiKage's Space Generation - Sub Sector Generator object created with DBref [get(%#/__SUB_GEN_NUM)]
+    },
+    {
+        &__SUB_GEN_NUM %#=[extract(%q0,1,1)];
+        think Located existing \[SSGSubG\] ShiKage's Space Generation - Sub Sector Generator object with DBref [get(%#/__SUB_GEN_NUM)]
+    }
+
+@@ Add object DB# to Core and set parent
 @sudo %#=
     {
-        &__BUILDNUM [setr(0,[get(%#/__RNG_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
-        think \[SSGRNG\] ShiKage's Space Generation - Random Number Generator updated to build: [get(get(%#/__RNG_NUM)/__BUILDNUM)]
+        &__SUB_GEN_NUM [get(%#/__CORE_NUM)]=[get(%#/__SUB_GEN_NUM)];
+        @parent [get(%#/__SUB_GEN_NUM)]=[get(%#/__CORE_NUM)]
+    } 
+
+@@ Set Required Flags
+@set [get(%#/__SUB_GEN_NUM)]=!halt sidefx
+    
+@@ Create Subsector
+&FN_CREATE_SUBSECTOR [get(%#/__SUB_GEN_NUM)]=
+    [@@(
+        %0 -- Sector DB#, %1 -- Subsector ID,
+        %q0 -- Subsector Obj, %q1 -- Subsector Row,
+        %q2 -- Subsector Col, %q3 -- Subsector X,
+        %q4 -- Subsector Y
+    )]
+    [ifelse(
+        [and(isdbref(%0),hasattr(%0,D_SID))],
+        {
+            [ifelse(
+                [between(0,get(%!/D_SUBSECTORS),%1,1)],
+                {
+                    [setq(0,create(Subsector [get(%0/D_SID)] [extract(get(%!/D_SUB_SECTOR_IDS),add(%1,1),1)]))]
+                    [null(parent(%q0,%0))]
+                    [set(%q0,
+                        D_SUBID:
+                            [mul(
+                                get(%0/D_SID),
+                                %1
+                            )]
+                    )]
+                    [set(%q0,
+                        D_SUB_ROW:
+                            [setr(1,floor(fdiv(%1,get(%!/D_SUB_SECTOR_ROWS))))]
+                    )]
+                    [set(%q0,
+                        D_SUB_COL:
+                            [setr(2,mod(%1,get(%!/D_SUB_SECTOR_COLS)))]
+                    )]
+                    [set(%q0,
+                        D_SUB_Y:
+                            [setq(4,
+                                sub(
+                                    ceil(fdiv(mul(get(%!/D_SECTORS_PER_ROW),get(%!/D_SUB_SECTOR_ROWS)),2)),
+                                    add(%q1,mul(get(%0/D_SECTOR_ROW),get(%!/D_SUB_SECTOR_ROWS)))
+                                )
+                            )]
+                    )]
+                    [set(%q0,
+                        D_SUB_X:
+                            [setr(3,
+                                sub(
+                                    add(%q1,mul(get(%0/D_SECTOR_COL),get(%!/D_SUB_SECTOR_COLS))),
+                                    ceil(fdiv(mul(get(%!/D_SECTORS_PER_COL),get(%!/D_SUB_SECTOR_COLS)),2))
+                                )
+                            )]
+                    )]
+                    [set(%q0,
+                        D_SYSTEM_ROW:
+                            [add(get(%0/D_SYSTEM_ROW),mul(%q1,get(%!/D_ROWS_PER_SUB)))]
+                    )]
+                    [set(%q0,
+                        D_SYSTEM_COL:
+                            [add(get(%0/D_SYSTEM_COL),mul(%q2,get(%!/D_COLS_PER_SUB)))]
+                    )]
+                    [set(%q0,
+                        D_DENSITY:
+                            [ulocal(%!/FN_DENSITY,%q3, %q4)]
+                    )]
+                    [pemit(%#,Created [name(%q0)] \\\[DB# %q0\\\])]
+                },
+                {
+                    #-2 INVALID SUBSECTOR ID
+                }
+            )]
+        },
+        {
+            #-1 INVALID SECTOR DB#
+        }
+    )]
+    
+@@ Calculate The Star Density
+&FN_DENSITY [get(%#/__SUB_GEN_NUM)]=
+    [@@(
+        %0 -- Subsector X, %1 -- Subsector Y,
+        %q0 -- Distance from Core, %q1 -- Angle of distance,
+        %q2 -- Core value, %q3 -- Arms value
+    )]
+    [setq(0,
+        sqrt(
+            add(
+                mul(%0, %0),
+                mul(%1, %1)
+            )
+        )
+    )]
+    [setq(1,
+        atan(fdiv(%1,%0))
+    )]
+    [setq(2,
+        sub(
+            1,
+            power(
+                fdiv(%q0, 2048),
+                2
+            )
+        )
+    )]
+    [setq(3,
+        add(
+            mul(
+                power(2.71828,sub(0,fdiv(%q0,3072))),
+                0.5,
+                power(
+                    sin(
+                        sub(
+                            power(mul(0.5,%q0),0.35),
+                            %q1
+                        )
+                    ),    
+                    2
+                )
+            ),
+            sub(
+                0.5,
+                fdiv(%q0,10000)
+            )
+        )
+    )]
+    [mul(0.94,max(%q2, %q3, 0.01))]
+    
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Star System Generator
+@@ Code to support the generation of a star system
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+think Setting up Star System Generator object
+
+@@ Start by getting the object DB# or creating one
+@switch [words(setr(0,[search(THING=\\\[SSGSSG\\\] ShiKage's Space Generation - Star System Generator)]))]=0,
+    {
+        &__STAR_SYSTEM_NUM %#=[create(\[SSGSSG\] ShiKage's Space Generation - Star System Generator)];
+        think New \[SSGSSG\] ShiKage's Space Generation - Star System Generator object created with DBref [get(%#/__STAR_SYSTEM_NUM)]
+    },
+    {
+        &__STAR_SYSTEM_NUM %#=[extract(%q0,1,1)];
+        think Located existing \[SSGSSG\] ShiKage's Space Generation - Star System Generator object with DBref [get(%#/__STAR_SYSTEM_NUM)]
     }
+
+@@ Add object DB# to Core and set parent
+@sudo %#=
+    {
+        &__STAR_SYSTEM_NUM [get(%#/__CORE_NUM)]=[get(%#/__STAR_SYSTEM_NUM)];
+        @parent [get(%#/__STAR_SYSTEM_NUM)]=[get(%#/__CORE_NUM)]
+    } 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    
 @@ Planet Name Generation Object
@@ -108,9 +361,9 @@ think Setting up Random Number Generator object
 think Setting up Name Generation Object
 
 @@ Start by getting the namegen object DB# or creating one
-@switch [words(setr(0,[search(THING=\[SSGNG\] ShiKage's Space Generation - NameGen)]))]=0,
+@switch [words(setr(0,[search(THING=\\\[SSGNG\\\] ShiKage's Space Generation - NameGen)]))]=0,
     {
-        &__NAMEGEN_NUM %#=[create(\[SSG\] - NameGen)];
+        &__NAMEGEN_NUM %#=[create(\[SSGNG\] ShiKage's Space Generation - NameGen)];
         think New \[SSGNG\] ShiKage's Space Generation - NameGen object created with DBref [get(%#/__NAMEGEN_NUM)]
     },
     {
@@ -125,27 +378,17 @@ think Setting up Name Generation Object
         @parent [get(%#/__NAMEGEN_NUM)]=[get(%#/__CORE_NUM)]
     }    
     
+@@ Set Required Flags
+@set [get(%#/__NAMEGEN_NUM)]=!halt sidefx
+
 @@ Pairs
 &D_PAIRS [get(%#/__NAMEGEN_NUM)]=..lexegezacebisousesarmaindirea.eratenberalavetiedorquanteisrion
-    
-@@ Custom RNG
-&FN_RAND [get(%#/__NAMEGEN_NUM)]=
-    [mod(
-        div(
-            add(
-                mul(214013,%0),
-                2531011
-            ),
-            65536
-        ),
-        32767
-    )]
     
 @@ Initialize Seed
 &FN_INIT [get(%#/__NAMEGEN_NUM)]=[setq(0,[todec(0x5a4a)] [todec(0x0248)] [todec(0xb753)])]
 
 @@ Generate Random Seeds
-&FN_RAND_SEEDS [get(%#/__NAMEGEN_NUM)]=%0 [setr(s,u(%!/FN_RAND,%0))] [u(%!/FN_RAND,%qs)]
+&FN_RAND_SEEDS [get(%#/__NAMEGEN_NUM)]=[mod(%0,32767)] [setr(s,mod(u(v(__CORE_NUM)/FN_LCG,mod(%0,32767)),32767))] [mod(u(v(__CORE_NUM)/FN_LCG,%qs),32767)]
     
 @@ Shuffle Seeds
 &FN_SHUFFLE [get(%#/__NAMEGEN_NUM)]=
@@ -202,20 +445,15 @@ think Setting up Name Generation Object
     [iter(lnum(20),
         [pemit(%#,PLANET ##: [u(%!/FN_CREATE_NAME,%q0)])]
     )]
-    
-@@ Update build number
-@sudo %#=
-    {
-        &__BUILDNUM [setr(0,[get(%#/__NAMEGEN_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
-        think \[SSGNG\] ShiKage's Space Generation - NameGen updated to build: [get(get(%#/__NAMEGEN_NUM)/__BUILDNUM)]
-    }
-    
+
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ Post-setup clean-up
 @@ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ Remove object reference attributes
 &__CORE_NUM %#=
-&__RNG_NUM %#=
+&__SECTOR_GEN_NUM %#=
+&__SUB_GEN_NUM %#=
+&__STAR_SYSTEM_NUM %#=
 &__NAMEGEN_NUM %#=
 
 @@ Reset Quiet flag
@@ -226,3 +464,5 @@ think Setting up Name Generation Object
     {
         @set %#=!QUIET
     }
+    
+think ShiKage's Space Generation setup has completed

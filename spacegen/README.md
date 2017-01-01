@@ -1,8 +1,14 @@
 # ShiKage's Space Generation
 This is a set of code, designed for RhostMUSH, to be used in the automatic
-generation of planetary systems. This is being built to work with the 
-HSpace space system. It will expect a single planetary system to each
+generation of star systems. This is being built to work with the 
+HSpace space system. It will expect a single star system to each
 HSpace universe.
+
+The star system generation is built off the Traveller 5 rules while using
+the classic Elite algoritm as a basis for the system naming process. The
+reason for this is to be able to later expand this with some additional
+traveller based coded systems to support things such as travel, trade,
+etc.
 
 ## Installation
 The code is quite simple to install but it will require Mushcode Pretty
