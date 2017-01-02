@@ -36,17 +36,15 @@ think Starting setup of ShiKage Space Generation system
 @@ Core object that contains data referenced by
 @@ other objects in this system
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up ShiKage's Space Generation Core object
-
 @@ Start by getting the Core object DB# or creating one
 @switch [words(setr(0,[search(THING=\\\[SSGC\\\] ShiKage's Space Generation - Core)]))]=0,
     {
         &__CORE_NUM %#=[create(\[SSGC\] ShiKage's Space Generation - Core)];
-        think New \[SSGC\] ShiKage's Space Generation - Core object created with DBref [get(%#/__CORE_NUM)]
+        think New Core object created with DBref [get(%#/__CORE_NUM)]
     },
     {
         &__CORE_NUM %#=[extract(%q0,1,1)];
-        think Located existing \[SSGC\] ShiKage's Space Generation - Core object with DBref [get(%#/__CORE_NUM)]
+        think Updating existing Core object with DBref [get(%#/__CORE_NUM)]
     }
 
 @@ Add object DB# to Core
@@ -73,7 +71,7 @@ think Setting up ShiKage's Space Generation Core object
 &D_ROWS_PER_SECTOR     [get(%#/__CORE_NUM)]=32
 &D_SECTORS_PER_ROW     [get(%#/__CORE_NUM)]=2048
 &D_SECTORS_PER_COL     [get(%#/__CORE_NUM)]=2048
-&D_MAX_SECTORS         [get(%#/__CORE_NUM)]=4194303
+&D_MAX_SECTORS         [get(%#/__CORE_NUM)]=4235363
 
 @@ Subsector Variables
 &D_SUBSECTORS          [get(%#/__CORE_NUM)]=16
@@ -83,13 +81,11 @@ think Setting up ShiKage's Space Generation Core object
 &D_SUB_SECTOR_COLS     [get(%#/__CORE_NUM)]=4
 &D_SUB_SECTOR_IDS      [get(%#/__CORE_NUM)]=
     Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi
-    
-@@ Update build number
-@sudo %#=
-    {
-        &__BUILDNUM [setr(0,[get(%#/__CORE_NUM)])]=[add(get(%q0/__BUILDNUM),1)];
-        think \[SSGC\] ShiKage's Space Generation - Core updated to build: [get(get(%#/__CORE_NUM)/__BUILDNUM)]
-    }    
+
+@@ Version, Credits, & License
+&__VERSION [get(%#/__CORE_NUM)]=0.1-alpha
+&__CREDITS [get(%#/__CORE_NUM)]=Created by Chris Workman (aka. ShiKage) c2016
+&__LICENSE [get(%#/__CORE_NUM)]=Licensed under Apache License, v2.0 (http://www.apache.org/licenses/LICENSE-2.0) 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ Sector Generator
@@ -97,17 +93,15 @@ think Setting up ShiKage's Space Generation Core object
 @@ These follow Traveller 5 rules and are roughly
 @@ 1280 parsecs to a sector (32 x 32)
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up Sector Generator object
-
 @@ Start by getting the object DB# or creating one
 @switch [words(setr(0,[search(THING=\\\[SSGSG\\\] ShiKage's Space Generation - Sector Generator)]))]=0,
     {
         &__SECTOR_GEN_NUM %#=[create(\[SSGSG\] ShiKage's Space Generation - Sector Generator)];
-        think New \[SSGSG\] ShiKage's Space Generation - Sector Generator object created with DBref [get(%#/__SECTOR_GEN_NUM)]
+        think New Sector Generator object created with DBref [get(%#/__SECTOR_GEN_NUM)]
     },
     {
         &__SECTOR_GEN_NUM %#=[extract(%q0,1,1)];
-        think Located existing \[SSGSG\] ShiKage's Space Generation - Sector Generator object with DBref [get(%#/__SECTOR_GEN_NUM)]
+        think Updating existing Sector Generator object with DBref [get(%#/__SECTOR_GEN_NUM)]
     }
 
 @@ Add object DB# to Core and set parent
@@ -133,13 +127,13 @@ think Setting up Sector Generator object
         [between(0,get(%!/D_MAX_SECTORS),%0,1)],
         {
             [ifelse(
-                [and(hasattr(%!,D_%0),isdbref(setr(0,v(D_%0))),hasattr(%q0,D_SID))],
+                [and(hasattr(%!,D_%0),isdbref(setr(0,v(D_SECTOR_%0))),hasattr(%q0,D_SID))],
                 {
                     [pemit(%#,Sector %0 already exists \\\[DB# %q0\\\])]
                 },
                 {
                     [setq(0,create(Sector %0))]
-                    [set(%!,D_%0:%q0)]
+                    [set(%!,D_SECTOR_%0:%q0)]
                     [set(%q0,
                         D_SID:
                             %0
@@ -160,16 +154,7 @@ think Setting up Sector Generator object
                         D_SYSTEM_COL:
                             [mul(%q2,get(%!/D_COLS_PER_SECTOR))]
                     )]
-                    [pemit(%#,Sector %0 Created \\\[DB# %q0\\\])]
-                    [pemit(%#,Generating Subsectors...)]
-                    [iter(
-                        [lnum(get(%!/D_SUB_SECTOR_ROWS))],
-                        [iter(
-                            [lnum(get(%!/D_SUB_SECTOR_COLS))],
-                            [setq(7,add(itext(0),mul(itext(1),get(%!/D_SUB_SECTOR_COLS))))]
-                            [ulocal([get(%!/__SUB_GEN_NUM)]/FN_CREATE_SUBSECTOR,%q0,%q7)]
-                        )]
-                    )]
+                    %q0
                 }
             )]
         },
@@ -184,17 +169,15 @@ think Setting up Sector Generator object
 @@ These follow Traveller 5 rules and are contain
 @@ 64 parsecs each (8 x 8)
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up Sub Sector Generator object
-
 @@ Start by getting the object DB# or creating one
-@switch [words(setr(0,[search(THING=\\\[SSGSubG\\\] ShiKage's Space Generation - Sub Sector Generator)]))]=0,
+@switch [words(setr(0,[search(THING=\\\[SSGSubG\\\] ShiKage's Space Generation - Subsector Generator)]))]=0,
     {
-        &__SUB_GEN_NUM %#=[create(\[SSGSubG\] ShiKage's Space Generation - Sub Sector Generator)];
-        think New \[SSGSubG\] ShiKage's Space Generation - Sub Sector Generator object created with DBref [get(%#/__SUB_GEN_NUM)]
+        &__SUB_GEN_NUM %#=[create(\[SSGSubG\] ShiKage's Space Generation - Subsector Generator)];
+        think New Subsector Generator object created with DBref [get(%#/__SUB_GEN_NUM)]
     },
     {
         &__SUB_GEN_NUM %#=[extract(%q0,1,1)];
-        think Located existing \[SSGSubG\] ShiKage's Space Generation - Sub Sector Generator object with DBref [get(%#/__SUB_GEN_NUM)]
+        think Updating existing Subsector Generator object with DBref [get(%#/__SUB_GEN_NUM)]
     }
 
 @@ Add object DB# to Core and set parent
@@ -268,7 +251,7 @@ think Setting up Sub Sector Generator object
                         D_DENSITY:
                             [ulocal(%!/FN_DENSITY,%q3, %q4)]
                     )]
-                    [pemit(%#,Created [name(%q0)] \\\[DB# %q0\\\])]
+                    %q0
                 },
                 {
                     #-2 INVALID SUBSECTOR ID
@@ -334,17 +317,15 @@ think Setting up Sub Sector Generator object
 @@ Star System Generator
 @@ Code to support the generation of a star system
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up Star System Generator object
-
 @@ Start by getting the object DB# or creating one
 @switch [words(setr(0,[search(THING=\\\[SSGSSG\\\] ShiKage's Space Generation - Star System Generator)]))]=0,
     {
         &__STAR_SYSTEM_NUM %#=[create(\[SSGSSG\] ShiKage's Space Generation - Star System Generator)];
-        think New \[SSGSSG\] ShiKage's Space Generation - Star System Generator object created with DBref [get(%#/__STAR_SYSTEM_NUM)]
+        think New Star System Generator object created with DBref [get(%#/__STAR_SYSTEM_NUM)]
     },
     {
         &__STAR_SYSTEM_NUM %#=[extract(%q0,1,1)];
-        think Located existing \[SSGSSG\] ShiKage's Space Generation - Star System Generator object with DBref [get(%#/__STAR_SYSTEM_NUM)]
+        think Updating existing Star System Generator object with DBref [get(%#/__STAR_SYSTEM_NUM)]
     }
 
 @@ Add object DB# to Core and set parent
@@ -358,17 +339,15 @@ think Setting up Star System Generator object
 @@ Planet Name Generation Object
 @@ This uses the algorithm use in the original Elite game
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-think Setting up Name Generation Object
-
 @@ Start by getting the namegen object DB# or creating one
 @switch [words(setr(0,[search(THING=\\\[SSGNG\\\] ShiKage's Space Generation - NameGen)]))]=0,
     {
         &__NAMEGEN_NUM %#=[create(\[SSGNG\] ShiKage's Space Generation - NameGen)];
-        think New \[SSGNG\] ShiKage's Space Generation - NameGen object created with DBref [get(%#/__NAMEGEN_NUM)]
+        think New NameGen object created with DBref [get(%#/__NAMEGEN_NUM)]
     },
     {
         &__NAMEGEN_NUM %#=[extract(%q0,1,1)];
-        think Located existing \[SSGNG\] ShiKage's Space Generation - NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
+        think Updating existing NameGen object with DBref [get(%#/__NAMEGEN_NUM)]
     }
 
 @@ Add object DB# to Core and set parent
@@ -446,6 +425,102 @@ think Setting up Name Generation Object
         [pemit(%#,PLANET ##: [u(%!/FN_CREATE_NAME,%q0)])]
     )]
 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Staff Commands
+@@ Contains staff commands for using the space
+@@ generation code.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Start by getting the object DB# or creating one
+@switch [words(setr(0,[search(THING=\\\[SSGSC\\\] ShiKage's Space Generation - Staff Commands)]))]=0,
+    {
+        &__STAFF_NUM %#=[create(\[SSGSC\] ShiKage's Space Generation - Staff Commands)];
+        think New Staff Commands object created with DBref [get(%#/__STAFF_NUM)]
+    },
+    {
+        &__STAFF_NUM %#=[extract(%q0,1,1)];
+        think Updating existing Staff Commands object with DBref [get(%#/__STAFF_NUM)]
+    }
+
+@@ Add object DB# to Core and set parent
+@sudo %#=
+    {
+        &__STAFF_NUM [get(%#/__CORE_NUM)]=[get(%#/__STAFF_NUM)];
+        @parent [get(%#/__STAFF_NUM)]=[get(%#/__CORE_NUM)]
+    }
+    
+@@ Set necessary flags
+@set [get(%#/__STAFF_NUM)]=!halt royal
+
+@@ Lock the object to staff
+&IS_STAFF [get(%#/__STAFF_NUM)]=[orflags(%#,BagiW)]
+@lock/use [get(%#/__STAFF_NUM)]=IS_STAFF/1
+
+@@ Create a new sector and it's contents
+&CMD_@NEWSECTOR [get(%#/__STAFF_NUM)]=$@NEWSECTOR:
+    @pemit %#=Usage: @newsector <sector number>%r[space(7)]Valid sector numbers are 0 - [get(%!/D_MAX_SECTORS)]
+    
+&CMD_@NEWSECTOR_ARGS [get(%#/__STAFF_NUM)]=$@NEWSECTOR *:
+    @@ {
+        %0 -- Sector number, %q0 -- Sector Generator Obj, 
+        %q1 -- Subsector Generator Obj, %q2 -- Sector Obj Created, 
+        %q3 -- Subsector Number, %q4 -- Subsector Obj Created,
+        %qz -- Sector Obj found
+    };
+    @assert [between(0,get(%!/D_MAX_SECTORS),%0,1)]={@pemit %#=Invalid sector number: %0};
+    @break 
+        [and(
+            [hasattr(get(%!/__SECTOR_GEN_NUM),D_SECTOR_%0)],
+            [isdbref(setr(z,get(get(%!/__SECTOR_GEN_NUM)/D_SECTOR_%0)))],
+            [hasattr(%qz,D_SID)]
+        )]={@pemit %#=Sector %0 already exists.};
+    @pemit %#=Creating Sector %0...;
+    @eval   [setq(0,get(%!/__SECTOR_GEN_NUM))]
+            [setq(1,get(%!/__SUB_GEN_NUM))]
+            [setq(2,ulocal(%q0/FN_CREATE_SECTOR,%0))];
+    @pemit %#=%b%bGenerating Subsectors....;
+    @dolist/inline [lnum(get(%!/D_SUB_SECTOR_ROWS))]=
+    {
+        @dolist/inline [lnum(get(%!/D_SUB_SECTOR_COLS))]=
+        {
+            @eval 
+            {
+                [setq(3,
+                    [add(
+                        mul(%d1,get(%!/D_SUB_SECTOR_COLS)),
+                        %d0
+                    )]
+                )]
+                [setq(4,ulocal(%q1/FN_CREATE_SUBSECTOR,%q2,%q3))]
+            };
+            @pemit %#=[space(4)]Created [name(%q4)] \(%q4\)
+        }
+    };
+    @pemit %#=Sector %0 has been created.    
+
+@@ Destroy a sector
+&CMD_@RMSECTOR [get(%#/__STAFF_NUM)]=$@RMSECTOR:
+    @pemit %#=Usage: @rmsector <sector number>%r[space(7)]Valid sector numbers are 0 - [get(%!/D_MAX_SECTORS)]
+    
+&CMD_@RMSECTOR_ARGS [get(%#/__STAFF_NUM)]=$@RMSECTOR *:
+    @assert [and(
+            [hasattr(get(%!/__SECTOR_GEN_NUM),D_SECTOR_%0)],
+            [isdbref(setr(z,get(get(%!/__SECTOR_GEN_NUM)/D_SECTOR_%0)))],
+            [hasattr(%qz,D_SID)]
+        )]={@pemit %#=Sector %0 does not exist.};
+    @dolist/inline [children(%qz)] %qz=
+    {
+        @pemit %#=Destroying [name(%d0)];
+        @dest %d0
+    };
+    @pemit %#=Completed removing Sector %0
+    
+@@ Send object to master room if one exists
+@switch 1=[and(isdbref(setr(0,#[config(MASTER_ROOM)])),hastype(%q0,ROOM))],
+    {
+        @pemit %#=Sending Staff Commands object to Master Room \(%q0\);
+        @tel [get(%#/__STAFF_NUM)]=%q0
+    }
+    
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ Post-setup clean-up
 @@ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -455,6 +530,7 @@ think Setting up Name Generation Object
 &__SUB_GEN_NUM %#=
 &__STAR_SYSTEM_NUM %#=
 &__NAMEGEN_NUM %#=
+&__STAFF_NUM %#=
 
 @@ Reset Quiet flag
 @ifelse [hasattr(%#,__SET_QUIET)]=
